@@ -1,8 +1,10 @@
 import hashlib
 import os
+import plistlib
 import tempfile
 import unittest
 import zipfile
+from pathlib import Path
 
 from tests.common import (BASE186, FINAL, ORIG_BIN, RESULT_SHA, arm64_stub,
                           have, make_synthetic_ipa)
@@ -16,8 +18,8 @@ class BinaryStepsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.m = manifest.load_set()
-        cls.orig = open(ORIG_BIN, 'rb').read()
-        cls.final = open(FINAL, 'rb').read()
+        cls.orig = Path(ORIG_BIN).read_bytes()
+        cls.final = Path(FINAL).read_bytes()
 
     def test_source_to_final(self):
         out, applied, skipped = engine.apply_steps(self.orig, self.m)
@@ -33,7 +35,7 @@ class BinaryStepsTest(unittest.TestCase):
 
     @unittest.skipUnless(have(BASE186), '1.00.186 binary not available')
     def test_base186(self):
-        data = open(BASE186, 'rb').read()
+        data = Path(BASE186).read_bytes()
         out, applied, skipped = engine.apply_steps(data, self.m)
         self.assertEqual(hashlib.sha256(out).hexdigest(), RESULT_SHA)
         self.assertEqual(len(applied), 4)
@@ -183,7 +185,7 @@ class LookAndPatchTest(unittest.TestCase):
         self.assertEqual([p['id'] for p in info['profiles']],
                          ['iphone11-xr', 'iphone11-pro', 'iphone12-14',
                           'iphone14pro-15', 'iphone14-15-promax',
-                          'iphone16-17'])
+                          'iphone16-17', 'ipad-air-m2'])
 
     def test_patch_profile(self):
         out = os.path.join(self.tmp.name, 'iphone11.ipa')
@@ -221,7 +223,7 @@ class LookAndPatchTest(unittest.TestCase):
 
     def test_existing_output_rejected(self):
         out = os.path.join(self.tmp.name, 'out.ipa')
-        open(out, 'wb').write(b'x')
+        Path(out).write_bytes(b'x')
         with self.assertRaises(engine.PatchError):
             engine.patch(self.ipa, out)
         engine.patch(self.ipa, out, force=True)
@@ -230,6 +232,83 @@ class LookAndPatchTest(unittest.TestCase):
         with self.assertRaises(engine.PatchError):
             engine.patch(self.ipa, os.path.join(self.tmp.name, 'o.ipa'),
                          version='1.00 beta')
+
+    def test_patch_ipad_profile(self):
+        out = os.path.join(self.tmp.name, 'ipad.ipa')
+
+        report = engine.patch(
+            self.ipa, out, profile='ipad-air-m2')
+
+        expected_sha = (
+            'ff26548f0e32f240e01c30e2e172bd00'
+            '5087b43ea1a517527bc84668339be10e'
+        )
+
+        self.assertEqual(report['profile'], 'ipad-air-m2')
+        self.assertEqual(report['slice_sha256'], expected_sha)
+
+        with zipfile.ZipFile(out) as zf:
+            self.assertIsNone(zf.testzip())
+
+            info = plistlib.loads(
+                zf.read('Payload/MH Unite.app/Info.plist'))
+
+            exe = zf.read('Payload/MH Unite.app/MH Unite')
+
+            self.assertEqual(info['UIDeviceFamily'], [1, 2])
+            self.assertEqual(
+                hashlib.sha256(exe).hexdigest(), expected_sha)
+
+    def test_repair_ipad_plist_only(self):
+        patched = os.path.join(self.tmp.name, 'ipad.ipa')
+        broken = os.path.join(self.tmp.name, 'ipad-broken.ipa')
+        repaired = os.path.join(self.tmp.name, 'ipad-repaired.ipa')
+
+        engine.patch(
+            self.ipa, patched, profile='ipad-air-m2')
+
+        info_name = 'Payload/MH Unite.app/Info.plist'
+        exe_name = 'Payload/MH Unite.app/MH Unite'
+
+        # Create an otherwise patched IPA with incorrect device family.
+        with zipfile.ZipFile(patched) as src:
+            with zipfile.ZipFile(broken, 'w') as dst:
+                for entry in src.infolist():
+                    data = src.read(entry)
+
+                    if entry.filename == info_name:
+                        info = plistlib.loads(data)
+                        info['UIDeviceFamily'] = [1]
+                        data = plistlib.dumps(info)
+
+                    dst.writestr(entry, data)
+
+        report = engine.patch(
+            broken, repaired, profile='ipad-air-m2')
+
+        # No binary patches or member changes should be required.
+        self.assertEqual(report['applied'], [])
+        self.assertEqual(report['added'], [])
+        self.assertEqual(report['removed'], [])
+
+        with zipfile.ZipFile(patched) as original:
+            with zipfile.ZipFile(repaired) as result:
+                self.assertIsNone(result.testzip())
+                self.assertEqual(
+                    result.read(exe_name), original.read(exe_name))
+                self.assertEqual(
+                    plistlib.loads(result.read(info_name)),
+                    plistlib.loads(original.read(info_name)))
+                self.assertEqual(
+                    set(result.namelist()),
+                    set(original.namelist()))
+
+        # A fully repaired IPA must trigger the no-change guard.
+        with self.assertRaises(engine.PatchError):
+            engine.patch(
+                repaired,
+                os.path.join(self.tmp.name, 'redundant.ipa'),
+                profile='ipad-air-m2')
 
     def test_no_change_guard(self):
         with open(FINAL, 'rb') as fh:
