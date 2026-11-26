@@ -53,6 +53,10 @@
     {
       "id": "ipad-loading",
       "title": "iPad loading text size and positioning"
+    },
+    {
+      "id": "ipad-online-guild",
+      "title": "iPad Online Guild entry crash prevention"
     }
   ],
   "profiles": [
@@ -167,7 +171,7 @@
       "label": "iPad Air 11-inch",
       "note": "Native iPad layout, bottom and right-edge gestures, and corrected loading text. Experimental executable tested on iPad Air (M2).",
       "default": false,
-      "result_sha256": "ff26548f0e32f240e01c30e2e172bd005087b43ea1a517527bc84668339be10e",
+      "result_sha256": "6d7bab9083ed757ea71b2c454a48e2f13476804b71c0f4dc964ff5a72d3d738c",
       "overrides": [
         {
           "id": "safe-area.34",
@@ -209,6 +213,13 @@
           "expect": "0110271e",
           "replace": "0190261e",
           "feature": "ipad-loading"
+        },
+        {
+          "id": "ipad.online_guild.lobi_view_attachment",
+          "vaddr": "0x1003DF09C",
+          "expect": "7ede0294",
+          "replace": "1f2003d5",
+          "feature": "ipad-online-guild"
         }
       ],
       "info_changes": {

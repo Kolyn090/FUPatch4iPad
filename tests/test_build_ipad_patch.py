@@ -80,7 +80,7 @@ class TestBuildSteps(unittest.TestCase):
         )
 
     def test_step_count(self):
-        self.assertEqual(len(self.steps), 6)
+        self.assertEqual(len(self.steps), 7)
 
     def test_ui_layout_hook(self):
         step = self.steps[0]
@@ -140,10 +140,18 @@ class TestBuildSteps(unittest.TestCase):
             for step in self.steps
         )
 
-        self.assertEqual(total, 372)
+        self.assertEqual(total, 376)
+
+    def test_online_guild_call_site(self):
+        step = self.steps[6]
+        self.assertEqual(step["vaddr"], "0x1003DF09C")
+        self.assertEqual(step["expect"], "7ede0294")
+        self.assertEqual(step["replace"], "1f2003d5")
+        with self.assertRaisesRegex(BuildError, "Original bytes mismatch"):
+            apply_steps(bytes(0x3DF0A0), [step])
 
     def test_loading_instructions(self):
-        dimension, origin = self.steps[4:]
+        dimension, origin = self.steps[4:6]
         self.assertEqual(dimension["vaddr"], "0x100441CC4")
         self.assertEqual(origin["vaddr"], "0x10049E628")
         source = bytearray(0x49E630)
@@ -490,7 +498,7 @@ class TestBuildPatch(unittest.TestCase):
             )
 
         self.assertEqual(result, expected)
-        self.assertEqual(len(steps), 6)
+        self.assertEqual(len(steps), 7)
 
 
 if __name__ == "__main__":

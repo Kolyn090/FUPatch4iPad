@@ -81,17 +81,17 @@ class ManifestTest(unittest.TestCase):
         self.assertEqual(expected[0x174:0x178].hex(), '7302090b')
         expected[0x177] = 0x4b
         self.assertEqual(ipad['overrides'], [{'id': common['id'], 'replace': expected.hex()}])
-        self.assertEqual(sum(len(bytes.fromhex(s['replace'])) for s in ipad['steps']), 368)
-        self.assertEqual(len(ipad['steps']), 5)
+        self.assertEqual(sum(len(bytes.fromhex(s['replace'])) for s in ipad['steps']), 372)
+        self.assertEqual(len(ipad['steps']), 6)
 
         self.assertEqual(
             ipad['result_sha256'],
-            'ff26548f0e32f240e01c30e2e172bd005087b43ea1a517527bc84668339be10e'
+            '6d7bab9083ed757ea71b2c454a48e2f13476804b71c0f4dc964ff5a72d3d738c'
         )
 
         self.assertEqual(
             len(manifest.profile_steps(self.m, 'ipad-air-m2')),
-            41
+            42
         )
 
         self.assertEqual(
