@@ -39,8 +39,8 @@ This project is unofficial and is not affiliated with, endorsed by, or sponsored
 
 - The iPhone 11 / XR profile adds three null-guard ranges (39 total).
 - Other iPhone profiles override the safe-area and UI-scale constants.
-- The iPad Air 11-inch profile adds five ranges covering 368 bytes
-  (41 ranges / 1,376 bytes total). It also overrides one byte within
+- The iPad Air 11-inch profile adds six ranges covering 372 bytes
+  (42 ranges / 1,380 bytes total). It also overrides one byte within
   the common `safe-area.34` replacement for the loading text origin.
 - binary becomes **thin arm64** (8,593,744 B)
 - `Info.plist`: profile-specific `UIDeviceFamily` (`[1]` for iPhone profiles,
@@ -130,7 +130,7 @@ binary patches, and customize `Info.plist` settings.
 | `iphone14pro-15` | iPhone 14 Pro, 15 | 177 / 177 / 0 / 63 | 1.6 | 3x, 59 pt; needs device test |
 | `iphone14-15-promax` | iPhone 14 Pro Max, 15 Plus, 15 Pro Max | 177 / 177 / 0 / 63 | 1.764 | 3x, 59 pt; needs device test |
 | `iphone16-17` | iPhone 16 / 17 (generic) | 177 / 177 / 0 / 63 | 1.6 | fallback, not per-model |
-| `ipad-air-m2` | iPad Air 11-inch | inherited | inherited | production IPA validated on iPad Air (M2) |
+| `ipad-air-m2` | iPad Air 11-inch | inherited | inherited | Phase 15-A production IPA validated on iPad Air (M2) |
 
 The **iPhone 12 / 13 / 14** profile remains the default and is
 binary-identical to the original patch.
@@ -155,7 +155,7 @@ To use this profile, select **iPad Air 11-inch** in the web interface
 and patch the original decrypted IPA. No intermediate IPA or additional
 conversion tool is required.
 
-The production executable matches the permanent Phase 14 build and the experimental v5 executable tested on iPad Air (M2). The tester also confirmed that the game is fully working on that device with the production-generated IPA. Rebuild from the original IPA when updating from Phase 12.
+The Phase 14 production IPA was validated on iPad Air (M2). The Phase 15-A executable adds a single instruction change that skips a background-thread UIKit view attachment during Online Guild initialization. Phase 15-A production integration and hardware validation are complete on iPad Air (M2). The tester confirmed that entering Online Guild now opens the room selection screen without the original crash. This crash prevention workaround leaves online multiplayer connectivity unresolved. In experimental testing, selecting a room produced a communication error after several seconds. Diagnosing the GameKit matchmaking failure and investigating possible PPSSPP interoperability remain future research. Rebuild from the original IPA when updating from Phase 12.
 Compatibility with other iPad models and iPadOS versions is not
 yet established.
 
@@ -228,7 +228,7 @@ The patcher verifies itself before writing the output:
    the default `iphone12-14` result is
    `25ff0f7ea91f58b2e1531080d9a9c55e9363f7a66031b1da89abf193826f92b4`
    The production `ipad-air-m2` result is
-   `ff26548f0e32f240e01c30e2e172bd005087b43ea1a517527bc84668339be10e`.
+   `6d7bab9083ed757ea71b2c454a48e2f13476804b71c0f4dc964ff5a72d3d738c`.
 
 The CLI additionally re-reads the executable, version, and parsed Info.plist
 contents from the written IPA.
@@ -332,6 +332,7 @@ The shared production manifest includes the permanent layout, gesture, and loadi
 - [Phase 12 — Production integration](docs/phases/research-phase12-production-integration.md)
 - [Phase 13 — Shared button geometry](docs/phases/research-phase13-sort-button.md)
 - [Phase 14 — Loading text size and position](docs/phases/research-phase14-loading-text.md)
+- [Phase 15-A — Online Guild entry crash](docs/phases/research-phase15-online-guild-crash.md)
 - [Research overview](docs/research.md)
 - [Technical reference](docs/technical-reference.md)
 

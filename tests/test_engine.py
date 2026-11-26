@@ -240,8 +240,8 @@ class LookAndPatchTest(unittest.TestCase):
             self.ipa, out, profile='ipad-air-m2')
 
         expected_sha = (
-            'ff26548f0e32f240e01c30e2e172bd00'
-            '5087b43ea1a517527bc84668339be10e'
+            '6d7bab9083ed757ea71b2c454a48e2f1'
+            '3476804b71c0f4dc964ff5a72d3d738c'
         )
 
         self.assertEqual(report['profile'], 'ipad-air-m2')
